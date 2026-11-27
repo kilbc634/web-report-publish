@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>神廟時薪監看報告</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10); --hl: rgba(42,120,214,0.08);
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300; --s8: #e34948;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10); --hl: rgba(57,135,229,0.14);
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #0ca30c; --s8: #e66767;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink);
+  font: 15px/1.6 system-ui, -apple-system, "PingFang TC", "Microsoft JhengHei", "Segoe UI", sans-serif; }
+main { max-width: 1080px; margin: 0 auto; padding: 32px 16px 56px; }
+h1 { font-size: 26px; line-height: 1.25; margin: 0 0 6px; }
+h2 { font-size: 17px; margin: 0 0 2px; }
+h3 { font-size: 14px; margin: 0; }
+.sub { color: var(--ink2); margin: 0; font-size: 13px; }
+h1 + .sub { font-size: 15px; }
+.note { color: var(--ink2); font-size: 13px; margin: 8px 0 0; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 24px 0; }
+.tile, .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+.tile { padding: 14px 16px; }
+.tile .k { color: var(--ink2); font-size: 13px; }
+.tile .v { font-size: 26px; font-weight: 650; line-height: 1.3; }
+.tile .w { color: var(--muted); font-size: 13px; }
+.card { padding: 18px 18px 14px; margin: 0 0 16px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 8px 24px; margin-top: 8px; }
+.plot { position: relative; margin-top: 6px; }
+.plot svg { display: block; touch-action: pan-y; }
+.plot text { font-size: 11.5px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+.plot text.lbl { fill: var(--ink2); font-size: 12px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 10px; font-size: 13px; color: var(--ink2); }
+.sw { display: inline-block; width: 14px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: 3px; }
+.tip { position: absolute; top: 4px; pointer-events: none; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px; font-size: 12.5px; line-height: 1.5; white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.12); z-index: 2; font-variant-numeric: tabular-nums; }
+.tip b { display: block; margin-bottom: 2px; }
+.tip .r { display: flex; justify-content: space-between; gap: 16px; color: var(--ink2); }
+.tip .r span:last-child { color: var(--ink); font-weight: 600; }
+ul.find { margin: 8px 0 0; padding-left: 20px; }
+ul.find li { margin: 4px 0; }
+.scroll { overflow-x: auto; margin-top: 12px; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
+th, td { padding: 5px 10px; text-align: right; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+th { color: var(--ink2); font-weight: 600; }
+th:first-child, td:first-child { text-align: left; }
+.wrap td, .wrap th { white-space: normal; text-align: left; vertical-align: top; }
+tr.top td { background: var(--hl); font-weight: 600; }
+details { margin-top: 4px; }
+summary { cursor: pointer; font-weight: 600; }
+a { color: var(--s1); }
+.nav { font-size: 13px; margin: 0 0 14px; }
+footer { color: var(--muted); font-size: 12.5px; margin-top: 24px; }
+</style>
+</head>
+<body>
+<main>
+  <p class="nav"><a href="../">← 所有報告</a></p>
+  <h1>神廟時薪監看報告</h1>
+  <p class="sub" id="meta"></p>
+
+  <div class="tiles" id="tiles"></div>
+
+  <section class="card">
+    <h2>重點</h2>
+    <ul class="find" id="find"></ul>
+  </section>
+
+  <section class="card">
+    <h2>各種做法的時薪</h2>
+    <p class="sub">單位：神聖石／小時。每小時檢查一次，用當時的市價換算。</p>
+    <div class="legend" id="lg-rate"></div>
+    <div id="c-rate"></div>
+    <p class="note">時薪是「掉落機率 × 市價」的期望值，不是實際收入；假設列在下方「計算方式與假設」。</p>
+  </section>
+
+  <section class="card">
+    <h2>期間時薪彙總</h2>
+    <div class="scroll"><table id="t-sum"></table></div>
+  </section>
+
+  <section class="card">
+    <h2>價格走勢</h2>
+    <p class="sub">單位：混沌石。通貨是交易所前一小時的成交均價；門票與寶石是交易站「立即購買」的掛單價。</p>
+    <div class="grid2">
+      <div><h3>皇家面容</h3><div id="c-v"></div></div>
+      <div><h3>L84 強化版神廟門票</h3><div id="c-84"></div></div>
+      <div><h3>L83 神廟門票</h3><div id="c-83"></div></div>
+      <div><h3>三色靈魂核心</h3><div id="c-core"></div></div>
+      <div><h3>Soul Core of Instability</h3><div id="c-ins"></div></div>
+      <div><h3>Greater Spell Echo Support</h3><div id="c-gem"></div></div>
+    </div>
+    <p class="note">門票的參考價在監看途中改過算法（見下方「匯報規則的調整」），L83 權重 400 以上在 21:42 之後、其餘門票在 07:42 之後，是第 6 到第 15 便宜的平均；之前是第 10 便宜的單一價位。</p>
+  </section>
+
+  <section class="card">
+    <h2>掉落率列表</h2>
+    <p class="sub">Atziri 每場的掉落機率。這些都是玩家統計或估計值，不是官方數字。</p>
+
+    <h3 style="margin-top:14px">L83 普通 Atziri</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>掉落物</th><th>權重 400 以上（Nerotox，約 500 場）</th><th>權重 400 以上（作者實測 26 場，僅供參考）</th><th>不挑權重（推算）</th></tr></thead>
+      <tbody>
+        <tr><td>Royal Visage（皇家面容）</td><td>80%</td><td>100%（26 個）</td><td>54%</td></tr>
+        <tr><td>Soul Core of Instability</td><td>17.6%</td><td>11.5%（3 顆）</td><td>12.0%</td></tr>
+        <tr><td>Soul Core of Might（紅）</td><td>4.8%</td><td>7.7%（2 顆）</td><td>3.3%</td></tr>
+        <tr><td>Soul Core of Intellect（藍）</td><td>4.8%</td><td>0%（0 顆）</td><td>3.3%</td></tr>
+        <tr><td>Soul Core of Finesse（綠）</td><td>4.8%</td><td>0%（0 顆）</td><td>3.3%</td></tr>
+        <tr><td>Atziri's Promise</td><td>48%</td><td>未記錄</td><td>—</td></tr>
+        <tr><td>Atziri's Step</td><td>15%</td><td>未記錄</td><td>—</td></tr>
+        <tr><td>Pledge of Hands</td><td>1.2%</td><td>未記錄</td><td>—</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Nerotox 的數字由他公布的「每 25 張神廟的掉落數」換算（皇家面容 20、Instability 4.4、三色核心各 1.2、Atziri's Promise 12、Atziri's Step 3.8、Pledge of Hands 0.3）。他用的神廟是以房間權重搜尋、合計 400 以上，並固定含 Doryani's Institute。「不挑權重」一欄沒有實測，是把皇家面容與核心的掉落率都乘上 0.68 的推算（做法見下方「計算方式與假設」）。作者實測只有 26 場，核心的數字誤差很大，列在這裡只供對照，沒有用在任何時薪計算裡。</p>
+
+    <h3 style="margin-top:18px">L84 強化版 Atziri（神廟含 Cradle of Creation）</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>掉落物</th><th>機率</th><th>備註</th></tr></thead>
+      <tbody>
+        <tr><td>Soul Core of Instability</td><td>約 25%</td><td></td></tr>
+        <tr><td>Soul Core of Might／Intellect／Finesse</td><td>各約 8%</td><td>沒有註明樣本數</td></tr>
+        <tr><td>Greater Spell Echo Support</td><td>5%</td><td>3.28 的資料，強化版樣本 150 場</td></tr>
+        <tr><td>Vaal Sacrifice Support</td><td>8%</td><td></td></tr>
+        <tr><td>Triskaidekaphobia</td><td>20%</td><td></td></tr>
+        <tr><td>Beauty</td><td>約 15%</td><td></td></tr>
+        <tr><td>Sacrificial Garb</td><td>約 15%</td><td></td></tr>
+        <tr><td>Royal Visage（皇家面容）</td><td>不掉落</td><td>作者的經驗，wiki 也只把它列在普通 Atziri</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">另外每場必掉一件傳奇（3.30 改版前的資料）：Atziri's Splendour 42%、The Vertex 40%、Atziri's Acuity 6%、Triumvirate Authority 5%、Atziri's Reflection 4%、Atziri's Disfavour 2%、Atziri's Rule 1%。</p>
+    <p class="note">特定神廟房間會提高核心掉落率，官方沒有公布是哪些房間與幅度。</p>
+
+    <h3 style="margin-top:18px">資料來源</h3>
+    <ul class="find">
+      <li>Nerotox，Normal Atziri 策略頁（Wealthy Exile）：<a href="https://wealthyexile.com/strategies/8407/normal_atziri">https://wealthyexile.com/strategies/8407/normal_atziri</a></li>
+      <li>Nerotox 的說明影片：<a href="https://www.youtube.com/watch?v=3ZzgfZu0leo">https://www.youtube.com/watch?v=3ZzgfZu0leo</a></li>
+      <li>poewiki，Atziri, Queen of the Vaal：<a href="https://www.poewiki.net/wiki/Atziri,_Queen_of_the_Vaal">https://www.poewiki.net/wiki/Atziri,_Queen_of_the_Vaal</a></li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>計算方式與假設</h2>
+    <div class="scroll"><table class="wrap">
+      <thead><tr><th>項目</th><th>採用的數值</th><th>來源</th></tr></thead>
+      <tbody>
+        <tr><td>L83 權重 400 以上，每場掉落</td><td>皇家面容 80%；紅、藍、綠核心各 4.8%；Instability 17.6%</td><td><a href="https://wealthyexile.com/strategies/8407/normal_atziri">Nerotox 的統計</a>（他說測了 500 張挑過房間的神廟）</td></tr>
+        <tr><td>L83 不挑權重，每場掉落</td><td>皇家面容與核心都是上一列的 68%：皇家面容 54%；紅、藍、綠核心各 3.3%；Instability 12.0%</td><td>推算，沒有實測。假設房間權重等於掉落機率增加的百分比，且皇家面容與核心同樣受影響；一般神廟的權重中位數約 270、挑過的平均約 440，(1 + 2.7) ÷ (1 + 4.4) ≈ 0.68</td></tr>
+        <tr><td>L84 強化版，每場掉落</td><td>Greater Spell Echo Support 5%；紅、藍、綠核心各 8%；Instability 25%；其他雜項合計 27 c</td><td><a href="https://www.poewiki.net/wiki/Atziri,_Queen_of_the_Vaal">poewiki</a> 的群眾回報估計，寶石機率來自 3.28 的 150 場樣本</td></tr>
+        <tr><td>每場時間</td><td>刷一張神廟 5 分鐘（L83 與 L84 相同）；產一張神廟 15 分鐘</td><td>作者提供</td></tr>
+        <tr><td>產 L84 的額外收益</td><td>每產兩張 L84，掉一張可通往王房的 L83 門票，以 L83 門票價計</td><td>作者的體感</td></tr>
+        <tr><td>產 L84 的成本</td><td>一個皇家面容</td><td>作者提供</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">沒有計入地圖、絲線等其他投入，也沒有計入買票與賣貨花的時間。門票與寶石是掛單價，不是成交價。「買 L84 刷」的期望值約有一半來自那顆 5% 機率的寶石；不計寶石時，每場期望值低於門票價。</p>
+  </section>
+
+  <section class="card">
+    <h2>匯報規則的調整</h2>
+    <p class="sub">監看當時，不挑權重神廟的皇家面容掉落率用的是 80%；本報告的時薪已改用 54% 重算，所以「買 L83（不挑）刷」與「自產 L83 自刷」的數字比當時發到 Discord 的低，逐次紀錄裡的觸發原因也是依當時的數字判定的。</p>
+    <p class="sub" style="margin-top:8px">原始規則：價格變動 10% 以上、任一做法時薪變動 15% 以上或第一名換人時立即匯報，否則每 3 小時匯報一次。監看途中為了減少 L83 門票造成的雜訊，改了四次：</p>
+    <div class="scroll"><table class="wrap">
+      <thead><tr><th>時間</th><th>調整</th><th>原因</th></tr></thead>
+      <tbody>
+        <tr><td>11-26 21:43</td><td>L83 權重 400 以上門票的參考價，改成第 6 到第 15 便宜的平均；這一項的門檻提高到 25%。</td><td>這種門票只有四百多張，幾張被買走就讓「第 10 便宜」跳一階（200 → 270 → 210 c）。</td></tr>
+        <tr><td>11-27 06:43</td><td>三種門票的參考價都改成第 6 到第 15 便宜的平均。</td><td>L83 不挑權重的門票也開始來回跳（200 → 140 → 159 c）。</td></tr>
+        <tr><td>11-27 08:43</td><td>L83 兩種門票與刷 L83 兩種做法的時薪，門檻提高到 25%。</td><td>市場上有「1 D」和「200 c」兩排掛單，參考價在兩者之間切換。</td></tr>
+        <tr><td>11-27 09:43</td><td>L83 門票價格不再單獨觸發匯報，只透過刷 L83 的時薪變動反映。</td><td>兩排掛單之間差 29%，25% 的門檻仍然擋不住。</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="card">
+    <details>
+      <summary>逐次檢查紀錄</summary>
+      <div class="scroll"><table id="t-log"></table></div>
+    </details>
+  </section>
+
+  <footer id="foot"></footer>
+</main>
+
+<script>
+const D = {"league":"Covens","generated":"2026-11-27 10:56","rows":[{"ts":1795692377,"cx_hour":1795687200,"div":167.40080357508918,"V":280.3534743202417,"M":1659.6038630236092,"I":1817.7353342815604,"F":1647.6100012083837,"INS":621.8461207121667,"P83":167.40080357508918,"P83W":220,"P84":829,"G":14229.068303882581,"n83":5016,"n83w":460,"n84":863,"rates":{"買L84刷":5698.9305750390595,"買L83(權重400+)刷":4316.703098762222,"買L83(不挑)刷":2721.7484642572413,"自產L84自刷":3321.773426161674,"產L84賣":2529.3877098692114,"自產L83自刷":1182.6395267895778},"authed":true,"trade_err":null,"reported":true,"reasons":["首次匯報"]},{"ts":1795696957,"cx_hour":1795690800,"div":169.3518986695268,"V":277.9073569482289,"M":1817.4846451996743,"I":1860.453983787542,"F":1701.8532297396926,"INS":589.8166925749339,"P83":170,"P83W":270,"P84":830,"G":14056.207589570724,"n83":5029,"n83w":442,"n84":867,"rates":{"買L84刷":5731.774815845068,"買L83(權重400+)刷":3772.3635920479564,"買L83(不挑)刷":2728.4072425926106,"自產L84自刷":3344.22163311658,"產L84賣":2548.3705722070845,"自產L83自刷":1192.1018106481527},"authed":true,"trade_err":null,"reported":true,"reasons":["L83(400+)門票 +23%"]},{"ts":1795700559,"cx_hour":1795694400,"div":170.35129158465165,"V":275.54273504273505,"M":1792.3563691836373,"I":1914.4449730869237,"F":1634.2444275110674,"INS":551.3348940656228,"P83":184,"P83W":210,"P84":820,"G":14309.508493110738,"n83":5127,"n83w":480,"n84":997,"rates":{"買L84刷":5851.113717053675,"買L83(權重400+)刷":4366.0719160710705,"自產L84自刷":3372.1502241352136,"買L83(不挑)刷":2474.5289029283285,"產L84賣":2545.8290598290596,"自產L83自刷":1170.6322257320821},"authed":true,"trade_err":null,"reported":true,"reasons":["L83(400+)門票 -22%","買L83(權重400+)刷時薪 +16%"]},{"ts":1795704158,"cx_hour":1795698000,"div":167.31909368802795,"V":292.19565217391306,"M":1759.0350640570477,"I":1861.5535410858563,"F":1609.6689432275139,"INS":537.6096443437795,"P83":190,"P83W":200.0,"P84":830,"G":14222.122963482376,"n83":5203,"n83w":479,"n84":871,"rates":{"買L84刷":5531.149957556366,"買L83(權重400+)刷":4553.138177584989,"買L83(不挑)刷":2448.133960757793,"自產L84自刷":3281.200532867352,"產L84賣":2531.217391304348,"自產L83自刷":1182.0334901894482},"authed":true,"trade_err":null,"reported":false,"reasons":[]},{"ts":1795707757,"cx_hour":1795701600,"div":165.02928596640575,"V":307.2826086956522,"M":1765.4167046383218,"I":1748.5860706990204,"F":1617.6367013422248,"INS":534.9450797644838,"P83":190,"P83W":248.0,"P84":840,"G":13697.430735211678,"n83":5000,"n83w":442,"n84":848,"rates":{"買L84刷":4993.667578032843,"買L83(權重400+)刷":4059.5413905082805,"買L83(不挑)刷":2504.168145545631,"自產L84自刷":3131.569068421254,"產L84賣":2510.869565217391,"自產L83自刷":1196.0420363864077},"authed":true,"trade_err":null,"reported":true,"reasons":["皇家面容 +12%"]},{"ts":1795711359,"cx_hour":1795705200,"div":163.0894716184139,"V":351.4288888888889,"M":1840.4666230634964,"I":1751.7219936468414,"F":1603.4547690040579,"INS":574.788494053732,"P83":196,"P83W":275.7,"P84":840,"G":13373.33667270994,"n83":4934,"n83w":427,"n84":877,"rates":{"買L84刷":4980.185136072981,"買L83(權重400+)刷":4271.961222946307,"買L83(不挑)刷":2802.645631603489,"自產L84自刷":3004.7596173515785,"產L84賣":2346.2844444444445,"自產L83自刷":1288.6614079008723},"authed":true,"trade_err":null,"reported":true,"reasons":["皇家面容 +14%"]},{"ts":1795714960,"cx_hour":1795708800,"div":164.0632033903062,"V":343.18853974122,"M":1766.2518177151023,"I":1766.5382570797633,"F":1546.9799933949116,"INS":581.3415328633475,"P83":190,"P83W":245.2,"P84":849,"G":13125.056271224496,"n83":4872,"n83w":411,"n84":1047,"rates":{"買L84刷":4631.637626786924,"買L83(權重400+)刷":4505.950858200414,"買L83(不挑)刷":2784.8785835762815,"自產L84自刷":2960.3437874730707,"產L84賣":2403.24584103512,"自產L83自刷":1266.2196458940703},"authed":true,"trade_err":null,"reported":false,"reasons":[]},{"ts":1795718560,"cx_hour":1795712400,"div":163.42660701489356,"V":312.92277227722775,"M":1840.1499277566315,"I":1781.6471613761225,"F":1600.0196238355313,"INS":655.6658407183071,"P83":200,"P83W":270.7,"P84":845,"G":12910.701954176591,"n83":4778,"n83w":421,"n84":1076,"rates":{"買L84刷":4910.36273911043,"買L83(權重400+)刷":4148.191296128183,"買L83(不挑)刷":2629.6820813671648,"自產L84自刷":3123.8223679459243,"產L84賣":2528.308910891089,"自產L83自刷":1257.4205203417912},"authed":true,"trade_err":null,"reported":true,"reasons":["皇家面容 -11%","易變核心 +14%"]},{"ts":1795722162,"cx_hour":1795716000,"div":161.81820317687317,"V":326.0933660933661,"M":1925.8166289278192,"I":1870.12685771198,"F":1614.5787628926653,"INS":716.864018794249,"P83":200,"P83W":311.4545625414985,"P84":820,"G":13107.274457326726,"n83":4487,"n83w":347,"n84":1141,"rates":{"買L84刷":5693.05809032995,"買L83(權重400+)刷":4023.5191874224865,"買L83(不挑)刷":2877.462277785919,"自產L84自刷":3204.984424302389,"產L84賣":2375.6265356265358,"自產L83自刷":1319.3655694464796},"authed":true,"trade_err":null,"reported":true,"reasons":["買L84刷時薪 +16%"]},{"ts":1795725762,"cx_hour":1795719600,"div":159.45335082698844,"V":310.84766584766584,"M":1994.8148824457437,"I":1830.8519914578228,"F":1610.2649981493444,"INS":688.7950954019656,"P83":200,"P83W":313.23469115778386,"P84":840,"G":13075.174767813052,"n83":4372,"n83w":327,"n84":1036,"rates":{"買L84刷":5373.984744064523,"買L83(權重400+)刷":3811.1532980356133,"買L83(不挑)刷":2747.579322511733,"自產L84自刷":3230.953188473133,"產L84賣":2516.6093366093364,"自產L83自刷":1286.8948306279333},"authed":true,"trade_err":null,"reported":false,"reasons":[]},{"ts":1795729360,"cx_hour":1795723200,"div":159.0577215477136,"V":296.9679300291545,"M":1923.2663558095994,"I":1774.0023488029049,"F":1556.978642035944,"INS":593.8418959067235,"P83":140,"P83W":307.24617723817084,"P84":850,"G":12724.61772381709,"n83":4374,"n83w":327,"n84":997,"rates":{"買L84刷":4584.373774792935,"買L83(不挑)刷":3169.4422251909855,"買L83(權重400+)刷":3444.578557246339,"自產L84自刷":3015.18965361077,"產L84賣":2492.1282798833818,"自產L83自刷":1212.3605562977464},"authed":true,"trade_err":null,"reported":true,"reasons":["L83門票 -30%","易變核心 -17%","買L84刷時薪 -19%"]},{"ts":1795732967,"cx_hour":1795726800,"div":158.83672142003996,"V":285.3854166666667,"M":1900.6484264721216,"I":1760.6537890813806,"F":1595.2527701895672,"INS":598.482570385977,"P83":158.83672142003996,"P83W":302.469377136032,"P84":860,"G":13977.631484963516,"n83":4546,"n83w":340,"n84":969,"rates":{"買L84刷":5232.319388449387,"買L83(不挑)刷":2875.3595280608915,"買L83(權重400+)刷":3401.838334810808,"自產L84自刷":3270.1786792424064,"產L84賣":2616.131776173413,"自產L83自刷":1195.3500462753427},"authed":true,"trade_err":null,"reported":true,"reasons":["L83門票 +13%"]},{"ts":1795736566,"cx_hour":1795730400,"div":158.25613776075141,"V":270.2126984126984,"M":1866.9966321028417,"I":1955.8989720935665,"F":1626.0366364275326,"INS":585.1682114288805,"P83":199.6,"P83W":308.25613776075147,"P84":822.4,"G":14717.820811749882,"n83":4498,"n83w":330,"n84":1079,"rates":{"買L84刷":6272.372072335553,"自產L84自刷":3524.054922845793,"買L83(權重400+)刷":3269.428484770072,"買L83(不挑)刷":2343.3814537713815,"產L84賣":2607.949206349206,"自產L83自刷":1184.6453634428453},"authed":true,"trade_err":null,"reported":true,"reasons":["L83門票 +26%","買L84刷時薪 +20%","買L83(不挑)刷時薪 -15%"]},{"ts":1795740164,"cx_hour":1795734000,"div":153.85627998871013,"V":260.8694362017804,"M":1816.9832514236,"I":2054.6263444712217,"F":1649.033780443734,"INS":601.1128660841327,"P83":154.6993959920971,"P83W":301.4425119954841,"P84":820.0,"G":15077.915438893593,"n83":4492,"n83w":303,"n84":1115,"rates":{"買L84刷":6633.9055028735675,"買L83(不挑)刷":2872.1827790197312,"自產L84自刷":3567.917161101196,"買L83(權重400+)刷":3336.477401531979,"產L84賣":2545.9210471770725,"自產L83自刷":1182.143882731224},"authed":true,"trade_err":null,"reported":true,"reasons":["L83門票 -22%","買L83(不挑)刷時薪 +16%"]},{"ts":1795743761,"cx_hour":1795737600,"div":151.61649689821553,"V":255.2814371257485,"M":1862.6865160969571,"I":2091.247166311275,"F":1550.159500829102,"INS":664.3781792192367,"P83":200.0,"P83W":302.26309565750165,"P84":819.8,"G":15010.033192923338,"n83":4415,"n83w":299,"n84":1085,"rates":{"買L84刷":6769.483909319553,"自產L84自刷":3685.926665952643,"買L83(權重400+)刷":3397.0690365728988,"買L83(不挑)刷":2376.4738054347854,"產L84賣":2658.0742514970057,"自產L83自刷":1194.1184513586963},"authed":true,"trade_err":null,"reported":true,"reasons":["L83門票 +29%","易變核心 +11%"]}]};
+const R = D.rows, N = R.length, TZ = 8 * 3600;
+const pad = n => String(n).padStart(2, '0');
+const dt = t => new Date((t + TZ) * 1000);
+const fT = t => { const d = dt(t); return pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate()) + ' ' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()); };
+const fH = t => { const d = dt(t); return pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()); };
+const f0 = v => Math.round(v).toLocaleString('en-US');
+const f1 = v => v.toFixed(1);
+const METHODS = [
+  ['買L84刷', '買 L84 刷', 'var(--s1)'], ['買L83(權重400+)刷', '買 L83（權重 400 以上）刷', 'var(--s2)'], ['買L83(不挑)刷', '買 L83（不挑）刷', 'var(--s3)'],
+  ['自產L84自刷', '自產 L84 自刷', 'var(--s4)'], ['產L84賣', '產 L84 賣', 'var(--s5)'], ['自產L83自刷', '自產 L83 自刷', 'var(--s6)'],
+];
+const rate = (r, k) => r.rates[k] / r.div;
+
+function nice(lo, hi, n) {
+  const raw = (hi - lo) / n || 1, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p;
+  const s = (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p;
+  return { lo: Math.floor(lo / s) * s, hi: Math.ceil(hi / s) * s, s };
+}
+const row = (k, v, c) => `<div class="r"><span>${c ? `<i class="sw" style="background:${c}"></i>` : ''}${k}</span><span>${v}</span></div>`;
+
+function chart(el, o) {
+  el.className = 'plot';
+  let lastW = 0;
+  function draw() {
+    const W = Math.max(280, el.clientWidth);
+    if (W === lastW) return; lastW = W;
+    const H = o.h || 220, m = { l: 48, r: o.endLabels ? o.endW || 64 : 12, t: 12, b: 26 };
+    const iw = W - m.l - m.r, ih = H - m.t - m.b, bw = iw / N;
+    const X = i => m.l + bw * (i + .5);
+    const vals = o.series.flatMap(s => s.vals);
+    const sc = nice(o.zero ? 0 : Math.min(...vals), Math.max(...vals), 4);
+    const Y = v => m.t + ih * (1 - (v - sc.lo) / (sc.hi - sc.lo));
+    let s = `<svg width="${W}" height="${H}" role="img" aria-label="${o.label}">`;
+    for (let k = 0; sc.lo + k * sc.s <= sc.hi + 1e-9; k++) {
+      const v = sc.lo + k * sc.s, y = Y(v);
+      s += `<line x1="${m.l}" x2="${W - m.r}" y1="${y}" y2="${y}" style="stroke:${k === 0 && o.zero ? 'var(--axis)' : 'var(--grid)'}"/>`;
+      s += `<text x="${m.l - 8}" y="${y + 4}" text-anchor="end">${o.yFmt(v)}</text>`;
+    }
+    const step = Math.ceil(46 / bw);
+    for (let i = 0; i < N; i += step) s += `<text x="${X(i)}" y="${H - m.b + 16}" text-anchor="middle">${fH(R[i].ts)}</text>`;
+    const ends = [];
+    o.series.forEach(r => {
+      s += `<path d="${r.vals.map((v, i) => (i ? 'L' : 'M') + X(i) + ',' + Y(v)).join('')}" style="fill:none;stroke:${r.color};stroke-width:2;stroke-linejoin:round;stroke-linecap:round"/>`;
+      if (o.endLabels) {
+        s += `<circle cx="${X(N - 1)}" cy="${Y(r.vals[N - 1])}" r="4" style="fill:${r.color};stroke:var(--surface);stroke-width:2"/>`;
+        ends.push({ y: Y(r.vals[N - 1]) + 4, name: r.short || r.name });
+      }
+    });
+    ends.sort((a, b) => a.y - b.y);
+    for (let k = 1; k < ends.length; k++) if (ends[k].y - ends[k - 1].y < 14) ends[k].y = ends[k - 1].y + 14;
+    ends.forEach(e => { s += `<text class="lbl" x="${X(N - 1) + 9}" y="${e.y}">${e.name}</text>`; });
+    s += `<g class="hov"></g><rect x="${m.l}" y="${m.t}" width="${iw}" height="${ih + 4}" fill="transparent"/></svg><div class="tip" hidden></div>`;
+    el.innerHTML = s;
+    const svg = el.querySelector('svg'), hov = el.querySelector('.hov'), tip = el.querySelector('.tip');
+    const move = e => {
+      const i = Math.max(0, Math.min(N - 1, Math.floor((e.clientX - svg.getBoundingClientRect().left - m.l) / bw)));
+      hov.innerHTML = `<line x1="${X(i)}" x2="${X(i)}" y1="${m.t}" y2="${m.t + ih}" style="stroke:var(--muted)"/>` +
+        o.series.map(r => `<circle cx="${X(i)}" cy="${Y(r.vals[i])}" r="4.5" style="fill:${r.color};stroke:var(--surface);stroke-width:2"/>`).join('');
+      tip.innerHTML = `<b>${fT(R[i].ts)}</b>` + [...o.series].sort((a, b) => b.vals[i] - a.vals[i]).map(r => row(r.name, o.tFmt(r.vals[i], i), r.color)).join('');
+      tip.hidden = false;
+      const tw = tip.offsetWidth; let lx = X(i) + 14; if (lx + tw > W - 4) lx = X(i) - 14 - tw;
+      tip.style.left = Math.max(0, lx) + 'px';
+    };
+    svg.addEventListener('pointermove', move); svg.addEventListener('pointerdown', move);
+    svg.addEventListener('pointerleave', () => { hov.innerHTML = ''; tip.hidden = true; });
+  }
+  draw(); new ResizeObserver(draw).observe(el);
+}
+
+// ---- header, tiles, findings ----
+const a = R[0], z = R[N - 1], reported = R.filter(r => r.reported).length;
+const topOf = r => METHODS.map(m => m[0]).reduce((b, k) => r.rates[k] > r.rates[b] ? k : b);
+const topCount = R.filter(r => topOf(r) === METHODS[0][0]).length;
+const rng = k => { const v = R.map(r => rate(r, k)); return [Math.min(...v), Math.max(...v), v.reduce((s, x) => s + x, 0) / N]; };
+const iV = R.reduce((b, r, i) => r.V > R[b].V ? i : b, 0);
+const gaps = R.map(r => rate(r, METHODS[1][0]) - rate(r, METHODS[2][0])), gapMin = Math.min(...gaps), gapMax = Math.max(...gaps), gapAvg = gaps.reduce((s, x) => s + x, 0) / N;
+const pct = (x, y) => (y >= x ? '+' : '−') + Math.abs((y / x - 1) * 100).toFixed(0) + '%';
+
+document.getElementById('meta').textContent =
+  `POE1 ${D.league} 聯盟｜${fT(a.ts)} 至 ${fT(z.ts)}（UTC+8）｜每小時檢查一次，共 ${N} 次｜通貨價格來自 GGG 官方 Currency Exchange，門票與寶石來自官方交易站`;
+document.getElementById('tiles').innerHTML = [
+  ['時薪第一名', '買 L84 刷', `${N} 次檢查中 ${topCount} 次排第一`],
+  ['第一名的時薪', `${f1(rng(METHODS[0][0])[0])}–${f1(rng(METHODS[0][0])[1])} D`, `最後一次 ${f1(rate(z, METHODS[0][0]))} D／小時`],
+  ['皇家面容', `${f0(z.V)} c`, `期間 ${f0(Math.min(...R.map(r => r.V)))}–${f0(Math.max(...R.map(r => r.V)))} c`],
+  ['Discord 匯報', `${reported} 則`, `${N - reported} 次檢查判定變化不大、沒有發送`],
+].map(t => `<div class="tile"><div class="k">${t[0]}</div><div class="v">${t[1]}</div><div class="w">${t[2]}</div></div>`).join('');
+
+document.getElementById('find').innerHTML = [
+  `<b>「買 L84 刷」全程第一</b>，時薪從 ${f1(rate(a, METHODS[0][0]))} D 升到 ${f1(rate(z, METHODS[0][0]))} D。後段走高的原因是寶石掛價以神聖石計從 ${f0(a.G / a.div)} D 漲到 ${f0(z.G / z.div)} D、藍色核心從 ${f0(a.I)} c 漲到 ${f0(z.I)} c，而 L84 門票一直在 820–860 c。`,
+  `<b>挑權重每次都比不挑划算</b>：「買 L83（權重 400 以上）刷」的時薪在 ${N} 次檢查裡都高於不挑權重，差距 ${f1(gapMin)}–${f1(gapMax)} D，平均 ${f1(gapAvg)} D。不過這種門票從約 ${f0(a.P83W)} c 漲到約 ${f0(z.P83W)} c，在架從 ${f0(a.n83w)} 張減到 ${f0(z.n83w)} 張，它的時薪也從 ${f1(rate(a, METHODS[1][0]))} D 降到 ${f1(rate(z, METHODS[1][0]))} D。`,
+  `<b>皇家面容在午夜前後衝高後回落</b>：${f0(a.V)} c → ${fT(R[iV].ts)} 的 ${f0(R[iV].V)} c → ${f0(z.V)} c。以神聖石計頭尾幾乎一樣（${(a.V / a.div).toFixed(2)} D 與 ${(z.V / z.div).toFixed(2)} D）。`,
+  `<b>神聖石持續貶值</b>：${f1(a.div)} c → ${f1(z.div)} c（${pct(a.div, z.div)}）。所以同一樣東西用混沌石看和用神聖石看，漲跌幅會不同。`,
+  `<b>「產 L84 賣」最穩定</b>：時薪一直在 ${f1(rng(METHODS[4][0])[0])}–${f1(rng(METHODS[4][0])[1])} D 之間，它不靠王的掉落，只看門票與皇家面容的價差。`,
+  `<b>自己產神廟再刷始終不如直接買票</b>：同一種神廟，買票來刷的時薪都是自己產的將近兩倍，花 15 分鐘產一張不划算。`,
+].map(t => `<li>${t}</li>`).join('');
+
+// ---- charts ----
+document.getElementById('lg-rate').innerHTML = METHODS.map(m => `<span><i class="sw" style="background:${m[2]}"></i>${m[1]}</span>`).join('');
+chart(document.getElementById('c-rate'), {
+  h: 380, label: '各種做法的時薪', zero: true, endLabels: true, endW: 132, yFmt: v => f0(v),
+  series: METHODS.map(m => ({ name: m[1], short: m[1].replace('（權重 400 以上）', ' 400+').replace('（不挑）', ' 不挑'), color: m[2], vals: R.map(r => rate(r, m[0])) })),
+  tFmt: (v, i) => f1(v) + ' D（' + f0(v * R[i].div) + ' c）',
+});
+const mini = (id, label, series, extra) => chart(document.getElementById(id), Object.assign({ label, yFmt: f0, series, tFmt: (v, i) => f0(v) + ' c（' + (v / R[i].div).toFixed(2) + ' D）' }, extra || {}));
+mini('c-v', '皇家面容價格', [{ name: '皇家面容', color: 'var(--s1)', vals: R.map(r => r.V) }]);
+mini('c-84', 'L84 門票價格', [{ name: 'L84 門票', color: 'var(--s1)', vals: R.map(r => r.P84) }]);
+mini('c-83', 'L83 門票價格', [{ name: '權重 400 以上', short: '400+', color: 'var(--s2)', vals: R.map(r => r.P83W) }, { name: '不挑權重', short: '不挑', color: 'var(--s3)', vals: R.map(r => r.P83) }], { endLabels: true, endW: 50 });
+mini('c-core', '三色靈魂核心價格', [{ name: '紅 Might', short: '紅', color: 'var(--s8)', vals: R.map(r => r.M) }, { name: '藍 Intellect', short: '藍', color: 'var(--s1)', vals: R.map(r => r.I) }, { name: '綠 Finesse', short: '綠', color: 'var(--s6)', vals: R.map(r => r.F) }], { endLabels: true, endW: 34 });
+mini('c-ins', 'Instability 核心價格', [{ name: 'Instability', color: 'var(--s1)', vals: R.map(r => r.INS) }]);
+mini('c-gem', 'Greater Spell Echo Support 價格', [{ name: '寶石', color: 'var(--s1)', vals: R.map(r => r.G) }]);
+
+// ---- tables ----
+document.getElementById('t-sum').innerHTML =
+  '<thead><tr><th>做法</th><th>第一次</th><th>最後一次</th><th>最低</th><th>最高</th><th>平均</th></tr></thead><tbody>' +
+  [...METHODS].sort((x, y) => rng(y[0])[2] - rng(x[0])[2]).map((m, k) => { const [lo, hi, av] = rng(m[0]); return `<tr${k === 0 ? ' class="top"' : ''}><td><i class="sw" style="background:${m[2]}"></i>${m[1]}</td><td>${f1(rate(a, m[0]))} D</td><td>${f1(rate(z, m[0]))} D</td><td>${f1(lo)} D</td><td>${f1(hi)} D</td><td>${f1(av)} D</td></tr>`; }).join('') + '</tbody>';
+document.getElementById('t-log').innerHTML =
+  '<thead><tr><th>檢查時間</th><th>神聖石</th><th>皇家面容</th><th>紅</th><th>藍</th><th>綠</th><th>Instability</th><th>寶石</th><th>L83</th><th>L83 400+</th><th>L84</th>' +
+  METHODS.map(m => `<th>${m[1].replace('（權重 400 以上）', ' 400+').replace('（不挑）', ' 不挑')}</th>`).join('') + '<th>Discord</th><th>觸發原因</th></tr></thead><tbody>' +
+  R.map(r => `<tr><td>${fT(r.ts)}</td><td>${f1(r.div)}</td><td>${f0(r.V)}</td><td>${f0(r.M)}</td><td>${f0(r.I)}</td><td>${f0(r.F)}</td><td>${f0(r.INS)}</td><td>${f0(r.G)}</td><td>${f0(r.P83)}</td><td>${f0(r.P83W)}</td><td>${f0(r.P84)}</td>` +
+    METHODS.map(m => `<td>${f1(rate(r, m[0]))} D</td>`).join('') + `<td>${r.reported ? '已發送' : '未發送'}</td><td style="text-align:left">${r.reasons.join('、') || (r.reported ? '定期匯報' : '—')}</td></tr>`).join('') + '</tbody>';
+document.getElementById('foot').textContent = `價格欄位單位為混沌石，時薪單位為神聖石／小時。報告產生時間：${D.generated}（UTC+8）。`;
+</script>
+</body>
+</html>
