@@ -21,7 +21,7 @@ reports/        每份報告一個 HTML 檔
 
 | 報告 | 說明 | 資料期間 |
 |---|---|---|
-| [神廟時薪監看報告](reports/poe_temple_watch_report.html) | Path of Exile 3.30 Covens 聯盟，比較六種 Temple of Atzoatl 賺錢做法的時薪，附 Atziri 掉落率列表與價格走勢 | 2026-11-26 至 2026-11-27 |
+| [神廟時薪監看報告](reports/poe_temple_watch_report.html) | Path of Exile 3.30 Covens 聯盟，比較六種 Temple of Atzoatl 賺錢做法的時薪，附 Atziri 掉落率列表與價格走勢 | 2026-11-26 至 2026-11-28 |
 
 ## 新增報告
 
